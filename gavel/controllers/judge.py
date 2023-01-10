@@ -61,15 +61,34 @@ def index():
         if not annotator.read_welcome:
             return redirect(url_for('welcome'))
         maybe_init_annotator()
-        if annotator.next is None:
+        zone_options = get_distinct_zones()
+        print(zone_options)
+        if annotator.next is None:  
             return render_template(
                 'wait.html',
                 content=utils.render_markdown(settings.WAIT_MESSAGE)
             )
         elif annotator.prev is None:
-            return render_template('begin.html', item=annotator.next)
+            return render_template('begin.html', item=annotator.next, zone=annotator.zone, zone_options=zone_options)
         else:
-            return render_template('vote.html', prev=annotator.prev, next=annotator.next)
+            return render_template('vote.html', prev=annotator.prev, next=annotator.next, zone=annotator.zone, zone_options=zone_options)
+
+def get_distinct_zones():
+    return [z[0] for z in Item.query.with_entities(Item.zone).distinct()]
+
+@app.route('/set_zone',methods=['POST'])
+@requires_open(redirect_to='index')
+@requires_active_annotator(redirect_to='index')
+def set_zone():
+    def tx():
+        annotator = get_current_annotator()
+        annotator.zone = request.form['next-zone']
+        print(annotator.zone)
+        if(annotator.next is None or annotator.next.zone != annotator.zone):
+            annotator.update_next(choose_next(annotator))
+        db.session.commit()
+    with_retries(tx)
+    return redirect(url_for('index'))
 
 @app.route('/vote', methods=['POST'])
 @requires_open(redirect_to='index')
@@ -167,10 +186,10 @@ def preferred_items(annotator):
 
     if ignored_ids:
         available_items = Item.query.filter(
-            (Item.active == True) & (~Item.id.in_(ignored_ids))
+            (Item.active == True) & (~Item.id.in_(ignored_ids)) & (annotator.zone == "" or Item.zone == annotator.zone)
         ).all()
     else:
-        available_items = Item.query.filter(Item.active == True).all()
+        available_items = Item.query.filter(Item.active == True & (annotator.zone == "" or Item.zone == annotator.zone)).all()
 
     prioritized_items = [i for i in available_items if i.prioritized]
 

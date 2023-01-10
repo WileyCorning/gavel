@@ -26,6 +26,7 @@
         <tr>
           <th data-sort-method="number">Id</th>
           <th data-sort-method="caseInsensitiveSort">Name</th>
+          <th data-sort-method="caseInsensitiveSort">Zone</th>
           <th data-sort-method="caseInsensitiveSort">Location</th>
           <th data-sort-method="caseInsensitiveSort">Description</th>
           <th class="sort-default" data-sort-method="number" data-sort-order="desc">Mu</th>
@@ -43,6 +44,7 @@
         <tr class="{{ 'disabled' if not item.active else 'prioritized' if item.prioritized else '' }}">
           <td><a href="{{ url_for('item_detail', item_id=item.id) }}" class="colored">{{ item.id }}</a></td>
           <td>{{ item.name }}</td>
+          <td>{{ item.zone }}</td>
           <td>{{ item.location }}</td>
           <td class="preserve-formatting">{{ item.description }}</td>
           <td>{{ item.mu | round(4) }}</td>
@@ -93,10 +95,12 @@
           <th data-sort-method="caseInsensitiveSort">Name</th>
           <th data-sort-method="caseInsensitiveSort">Email</th>
           <th data-sort-method="caseInsensitiveSort">Description</th>
+          <th data-sort-method="caseInsensitiveSort">Zone</th>
           <th data-sort-method="number">Votes</th>
           <th data-sort-method="number">Next (Id)</th>
           <th data-sort-method="number">Previous (Id)</th>
           <th data-sort-method="number" data-sort-order="desc">Updated</th>
+          <th class="no-sort">AUTH</th>
           <th class="no-sort">Email</th>
           <th data-sort-method="caseInsensitiveSort">Active</th>
           <th class="no-sort">Delete</th>
@@ -109,10 +113,12 @@
           <td>{{ annotator.name }}</td>
           <td>{{ annotator.email }}</td>
           <td>{{ annotator.description }}</td>
+          <td>{{ annotator.zone }}</td>
           <td>{{ counts.get(annotator.id, 0) }}</td>
           <td data-sort="{{ annotator.next_id or -1 }}">{{ annotator.next_id }}</td>
           <td data-sort="{{ annotator.prev_id or -1 }}">{{ annotator.prev_id }}</td>
           <td data-sort="{{ annotator.updated | utcdatetime_epoch }}">{{ annotator.updated | utcdatetime_local }}</td>
+          <td>{{ url_for('login',secret=annotator.secret, _external=True) }}</td>
           <td class="compact">
             <form action="{{ url_for('annotator') }}" method="post">
               <input type="submit" name="action" value="Email" class="neutral">

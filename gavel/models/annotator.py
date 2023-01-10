@@ -14,6 +14,7 @@ class Annotator(db.Model):
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
+    zone = db.Column(db.Text, nullable=False)
     read_welcome = db.Column(db.Boolean, default=False, nullable=False)
     description = db.Column(db.Text, nullable=False)
     secret = db.Column(db.String(32), unique=True, nullable=False)
@@ -31,6 +32,7 @@ class Annotator(db.Model):
         self.name = name
         self.email = email
         self.description = description
+        self.zone = ""
         self.alpha = crowd_bt.ALPHA_PRIOR
         self.beta = crowd_bt.BETA_PRIOR
         self.secret = utils.gen_secret(32)
