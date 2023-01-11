@@ -9,9 +9,11 @@ view_table = db.Table('view',
 
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
+    uuid = db.Column(db.Text, nullable=True, unique=True)
     name = db.Column(db.Text, nullable=False)
     zone = db.Column(db.Text, nullable=False)
     location = db.Column(db.Text, nullable=False)
+    link = db.Column(db.Text,nullable=False)
     description = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
     viewed = db.relationship('Annotator', secondary=view_table)
@@ -20,10 +22,12 @@ class Item(db.Model):
     mu = db.Column(db.Float)
     sigma_sq = db.Column(db.Float)
 
-    def __init__(self, name, zone, location, description):
+    def __init__(self, uuid, name, zone, location, link, description):
         self.name = name
+        self.uuid = None if uuid=="" else uuid
         self.zone = zone
         self.location = location
+        self.link = link
         self.description = description
         self.mu = crowd_bt.MU_PRIOR
         self.sigma_sq = crowd_bt.SIGMA_SQ_PRIOR

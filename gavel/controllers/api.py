@@ -8,13 +8,15 @@ from flask import Response
 @utils.requires_auth
 def item_dump():
     items = Item.query.order_by(desc(Item.mu)).all()
-    data = [['Mu', 'Sigma Squared', 'Name', 'Location', 'Description', 'Active']]
+    data = [['Mu', 'Sigma Squared', 'UUID', 'Name', 'Zone', 'Location', 'Link', 'Active']]
     data += [[
         str(item.mu),
         str(item.sigma_sq),
+        item.uuid,
         item.name,
+        item.zone,
         item.location,
-        item.description,
+        item.link,
         item.active
     ] for item in items]
     return Response(utils.data_to_csv_string(data), mimetype='text/csv')

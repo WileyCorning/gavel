@@ -53,7 +53,7 @@ def admin():
 @app.route('/admin/item', methods=['POST'])
 @utils.requires_auth
 def item():
-    N_COL = len(['name','zone','location','description'])
+    N_COL = len(['uuid','name','zone','location','link','description'])
     action = request.form['action']
     if action == 'Submit':
         data = parse_upload_form()
@@ -61,7 +61,7 @@ def item():
             # validate data
             for index, row in enumerate(data):
                 if len(row) != N_COL:
-                    return utils.user_error('Bad data: row %d has %d elements (expecting 3)' % (index + 1, len(row)))
+                    return utils.user_error('Bad data: row %d has %d elements (expecting %d)' % (index + 1, len(row), N_COL))
             def tx():
                 for row in data:
                     _item = Item(*row)
