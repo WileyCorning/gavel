@@ -66,7 +66,8 @@ def index():
         if annotator.next is None:  
             return render_template(
                 'wait.html',
-                content=utils.render_markdown(settings.WAIT_MESSAGE)
+                content=utils.render_markdown(settings.WAIT_MESSAGE),
+                zone=annotator.zone, zone_options=zone_options
             )
         elif annotator.prev is None:
             return render_template('begin.html', item=annotator.next, zone=annotator.zone, zone_options=zone_options)

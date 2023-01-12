@@ -242,11 +242,12 @@ def tag_filtered(tag):
             item_counts[w] = item_counts.get(w, 0) + 1
             item_counts[l] = item_counts.get(l, 0) + 1
 
+        viewed = {i.id: {a.id for a in i.viewed} for i in items}
         annotators = Annotator.query.order_by(Annotator.id).all()
         skipped = {}
         for a in annotators:
             for i in a.ignore:
-                if a.id not in viewed[i.id]:
+                if i.id in viewed and a.id not in viewed[i.id]:
                     skipped[i.id] = skipped.get(i.id, 0) + 1
         
         return render_template('admin_tag.html',tag=tag,items=items,
