@@ -75,7 +75,7 @@
           </td>
           <td>
             {% if item.link|length > 0 %}
-              <a href="{{ item.link if (item.link.startswith('http://') or item.link.startswith('https://')) else '//'+item.link }}">[link]</a>\
+              <a href="{{ item.link if (item.link.startswith('http://') or item.link.startswith('https://')) else '//'+item.link }}">[link]</a>
             {% endif %}
           </td>
           <td class="preserve-formatting">{% if item.description|length > 140 %}{{ item.description[:140] }}...{% else %}{{ item.description }}{% endif %}</td>
