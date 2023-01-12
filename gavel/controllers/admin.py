@@ -53,18 +53,30 @@ def admin():
 @app.route('/admin/item', methods=['POST'])
 @utils.requires_auth
 def item():
-    N_COL = len(['uuid','name','zone','location','link','description'])
+    N_COL = len(['uuid','name','zone','location','tags','link','description'])
     action = request.form['action']
     if action == 'Submit':
         data = parse_upload_form()
         if data:
+            tag_vals = set()
             # validate data
             for index, row in enumerate(data):
                 if len(row) != N_COL:
                     return utils.user_error('Bad data: row %d has %d elements (expecting %d)' % (index + 1, len(row), N_COL))
+            # harvest tags
+            for index,row in enumerate(data):
+                for v in row[4].split(' '):
+                    tag_vals.add(v)
+            
+            tag_dict = get_or_insert_tag_values(tag_vals)
+
             def tx():
                 for row in data:
+                    row_tags = []
+                    for v in row[4].split(' '):
+                        row_tags.append(tag_dict[v])
                     _item = Item(*row)
+                    _item.tags = row_tags
                     db.session.add(_item)
                 db.session.commit()
             with_retries(tx)
@@ -119,6 +131,20 @@ def parse_upload_form():
         data = utils.data_from_csv_string(csv)
     return data
 
+def get_or_insert_tag_values(tag_vals):
+    tags = Tag.query.filter(Tag.value.in_(tag_vals)).all()
+    existing_v = [t.value for t in tags]
+    to_add = [t for t in tag_vals if t not in existing_v]
+
+    def tx():
+        for v in to_add:
+            _tag = Tag(v)
+            db.session.add(_tag)
+            tags.append(_tag)
+        db.session.commit()
+    with_retries(tx)
+    
+    return {t.value: t for t in tags}
 
 @app.route('/admin/item_patch', methods=['POST'])
 @utils.requires_auth
@@ -198,6 +224,33 @@ def setting():
         Setting.set(SETTING_CLOSED, new_value)
         db.session.commit()
     return redirect(url_for('admin'))
+
+@app.route('/admin/tag/<tag>/')
+@utils.requires_auth
+def tag_filtered(tag):
+    tag_obj = Tag.by_value(tag)
+    if(tag_obj is None):
+        return render_template('admin_tag.html',tag=tag,items=[],item_counts={},skipped={})
+    else:
+        items = tag_obj.items
+        decisions = Decision.query.all()
+        item_counts = {}
+        for d in decisions:
+            a = d.annotator_id
+            w = d.winner_id
+            l = d.loser_id
+            item_counts[w] = item_counts.get(w, 0) + 1
+            item_counts[l] = item_counts.get(l, 0) + 1
+
+        annotators = Annotator.query.order_by(Annotator.id).all()
+        skipped = {}
+        for a in annotators:
+            for i in a.ignore:
+                if a.id not in viewed[i.id]:
+                    skipped[i.id] = skipped.get(i.id, 0) + 1
+        
+        return render_template('admin_tag.html',tag=tag,items=items,
+        item_counts=item_counts,skipped=skipped)
 
 @app.route('/admin/item/<item_id>/')
 @utils.requires_auth

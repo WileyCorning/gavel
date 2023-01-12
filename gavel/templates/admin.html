@@ -43,6 +43,7 @@
           <th data-sort-method="caseInsensitiveSort">Name</th>
           <th data-sort-method="caseInsensitiveSort">Zone</th>
           <th data-sort-method="caseInsensitiveSort">Location</th>
+          <th data-sort-method="caseInsensitiveSort">Tags</th>
           <th data-sort-method="none">Link</th>
           <th data-sort-method="caseInsensitiveSort">Description</th>
           <th class="sort-default" data-sort-method="number" data-sort-order="desc">Mu</th>
@@ -67,7 +68,16 @@
           <td>{{ item.name }}</td>
           <td>{{ item.zone }}</td>
           <td>{{ item.location }}</td>
-          <td>{% if item.link|length > 0 %}<a href="{{ item.link if (item.link.startswith('http://') or item.link.startswith('https://')) else '//'+item.link }}">[link]</a>{% endif %}</td>
+          <td>
+            {% for tag in item.tags %}
+              <a href="{{ url_for('tag_filtered', tag=tag.value) }}">{{tag.value}}</a><span style="display:inline-block;width:1em;"></span>
+            {% endfor %}
+          </td>
+          <td>
+            {% if item.link|length > 0 %}
+              <a href="{{ item.link if (item.link.startswith('http://') or item.link.startswith('https://')) else '//'+item.link }}">[link]</a>\
+            {% endif %}
+          </td>
           <td class="preserve-formatting">{% if item.description|length > 140 %}{{ item.description[:140] }}...{% else %}{{ item.description }}{% endif %}</td>
           <td>{{ item.mu | round(4) }}</td>
           <td>{{ item.sigma_sq | round(4) }}</td>
@@ -177,7 +187,7 @@
     <h2>Add Projects</h2>
   </div>
   <div class="info">
-    <p>Add UUID (optional), name, zone, location, link, description (CSV format)</p>
+    <p>Add UUID (optional), name, zone, location, tags (space-delimited), link, description. (CSV format)</p>
     <textarea name="data" form="item_form"></textarea>
     <form action="{{ url_for('item') }}" method="post" id="item_form" enctype="multipart/form-data">
       <div class="upload-container">

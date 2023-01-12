@@ -1,4 +1,5 @@
 from gavel.models import db
+from gavel.models.tag import item_tag_table
 import gavel.crowd_bt as crowd_bt
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -13,6 +14,7 @@ class Item(db.Model):
     name = db.Column(db.Text, nullable=False)
     zone = db.Column(db.Text, nullable=False)
     location = db.Column(db.Text, nullable=False)
+    tags = db.relationship('Tag', secondary=item_tag_table)
     link = db.Column(db.Text,nullable=False)
     description = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
@@ -22,11 +24,12 @@ class Item(db.Model):
     mu = db.Column(db.Float)
     sigma_sq = db.Column(db.Float)
 
-    def __init__(self, uuid, name, zone, location, link, description):
+    def __init__(self, uuid, name, zone, location, _tags_ignore_, link, description):
         self.name = name
         self.uuid = None if uuid=="" else uuid
         self.zone = zone
         self.location = location
+        # Tags should be filled from somewhere else
         self.link = link
         self.description = description
         self.mu = crowd_bt.MU_PRIOR
