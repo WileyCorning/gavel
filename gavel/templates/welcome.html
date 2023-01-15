@@ -8,14 +8,6 @@
   <div class="info">
     {{ content }}
   </div>
-  {% block zoneswap %}
-    <div class="zone">
-      <form action="{{ url_for('set_zone') }}" method="post" class="project_form">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="submit" value="Submit"/>
-      </form>
-    </div>
-  {% endblock %}
 </div>
 
 <div style="margin-top: 16px;">
@@ -27,7 +19,7 @@
         </label>
         <select type="dropdown" name="next-zone" id="select-next-zone" style="height: 32px;" required>
           {% if not zone_opt %}
-            <option value="" selected></selected></option>>
+            <option hidden disabled selected value></option>
           {% endif %}
           {% for zone_opt in zone_options %}
             {% if zone_opt == zone %} 
@@ -36,7 +28,7 @@
             <option value="{{ zone_opt }}">{{ zone_opt }}</option>
             {% endif %}
           {% endfor %}
-          <option value="" selected><span style="font-style: italic">(all buildings)</span></option>>
+          <!-- <option value="" selected><span style="font-style: italic">(all buildings)</span></option>> -->
         </select>
         <input type="submit" name="action" value="Continue" class="button-full button-gap positive">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

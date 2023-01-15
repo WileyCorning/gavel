@@ -4,6 +4,7 @@ from gavel.constants import *
 import gavel.settings as settings
 import gavel.utils as utils
 import gavel.crowd_bt as crowd_bt
+from sqlalchemy import and_,or_,not_
 from flask import (
     redirect,
     render_template,
@@ -73,7 +74,11 @@ def index():
         elif annotator.prev is None:
             return render_template('begin.html', item=annotator.next, zone=annotator.zone, zone_options=zone_options)
         else:
-            return render_template('vote.html', prev=annotator.prev, next=annotator.next, zone=annotator.zone, zone_options=zone_options)
+            prev_viewed = annotator in annotator.prev.viewed
+            next_viewed = annotator in annotator.next.viewed
+            print(prev_viewed)
+            print(next_viewed)
+            return render_template('vote.html', prev=annotator.prev,prev_viewed=prev_viewed,next=annotator.next,next_viewed=next_viewed, zone=annotator.zone, zone_options=zone_options)
 
 def get_distinct_zones():
     return [z[0] for z in Item.query.with_entities(Item.zone).distinct()]
@@ -87,7 +92,11 @@ def set_zone():
         annotator.zone = request.form['next-zone']
         print(annotator.zone)
     
-        if(annotator.next is None or annotator.next.zone != annotator.zone):
+        if(annotator.next is None or (
+            # Shuffle next if (a) it's fresh and we're moving to a different zone, or (b) it's reheated and we're reentering its zone
+            (annotator in annotator.next.viewed and annotator.next.zone == annotator.zone) or
+            (annotator not in annotator.next.viewed and annotator.next.zone != annotator.zone)
+        )):
             annotator.update_next(choose_next(annotator))
         
         db.session.commit()
@@ -113,10 +122,25 @@ def vote():
                         perform_vote(annotator, next_won=True)
                         decision = Decision(annotator, winner=annotator.next, loser=annotator.prev)
                     db.session.add(decision)
-                annotator.next.viewed.append(annotator) # counted as viewed even if deactivated
-                annotator.prev = annotator.next
-                # [Wiley] do not add previously-seen items to the ignorelist
-                # annotator.ignore.append(annotator.prev)
+                '''
+                [Wiley] Adjustment note
+
+                The original Gavel logic ignores an item as soon as it is voted.
+
+                Here, we change this so that the item will only be ignored if this is its *second* vote.
+
+                The effect is that an item can reappear once the annotator is in a different zone.
+                See changes made to the selection logic.
+                '''
+                # Check if this `next` is resurfacing
+                was_previously_viewed = annotator in annotator.next.viewed
+                
+                if was_previously_viewed:
+                    annotator.ignore.append(annotator.next)
+                else:
+                    annotator.next.viewed.append(annotator) # counted as viewed even if deactivated
+                    annotator.prev = annotator.next
+            
             annotator.update_next(choose_next(annotator))
             db.session.commit()
     with_retries(tx)
@@ -175,8 +199,6 @@ def welcome_done():
         if request.form['action'] == 'Continue':
             annotator.read_welcome = True
         if 'next-zone' in request.form:
-            print("!!!!!")
-            print(request.form['next-zone'])
             annotator.zone = request.form['next-zone']
 
         db.session.commit()
@@ -196,12 +218,26 @@ def preferred_items(annotator):
     items = []
     ignored_ids = {i.id for i in annotator.ignore}
 
-    if ignored_ids:
-        available_items = Item.query.filter(
-            (Item.active == True) & (~Item.id.in_(ignored_ids)) & (annotator.zone == "" or Item.zone == annotator.zone)
-        ).all()
+    '''
+    Allow an item if it has not been ignored, and EITHER:
+    - it is in the same zone and has not been viewed, OR
+    - it is in a different zone from the annotator AND has been viewed
+    '''
+
+    if annotator.zone == "":
+        available_items = Item.query.filter(and_(
+            (Item.active == True),
+            not_(Item.id.in_(ignored_ids)),
+            not_(Item.viewed.any(Annotator.id == annotator.id))
+        )).all()
     else:
-        available_items = Item.query.filter(Item.active == True & (annotator.zone == "" or Item.zone == annotator.zone)).all()
+        available_items = Item.query.filter(and_(
+            (Item.active == True),
+            not_(Item.id.in_(ignored_ids)),
+            or_(
+                and_(Item.zone != annotator.zone, Item.viewed.any(Annotator.id == annotator.id)),
+                and_(Item.zone == annotator.zone, not_(Item.viewed.any(Annotator.id == annotator.id)))
+        ))).all()
 
     prioritized_items = [i for i in available_items if i.prioritized]
 
