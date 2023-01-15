@@ -5,30 +5,52 @@
   <div class="banner-tight">
     <h1>Start</h1>
   </div>
+  {% block zoneswap %}
+  <div class="zone">
+    <form action="{{ url_for('set_zone') }}" method="post" class="project_form">
+      <p>Finding new projects in </p>
+      <select type="dropdown" name="next-zone" id="select-next-zone" style="height: 40px; width: 160px;" required>
+        {% for zone_opt in zone_options %}
+          {% if zone_opt == zone %} 
+          <option value="{{ zone_opt }}" selected>{{ zone_opt }}</option>
+          {% else %}
+          <option value="{{ zone_opt }}">{{ zone_opt }}</option>
+          {% endif %}
+        {% endfor %}
+        {% if zone %}
+          <option value=""><span style="font-style: italic">(all buildings)</span></option>>
+        {% else %}
+          <option value=""><span style="font-style: italic" selected>(all buildings)</span></option>>
+        {% endif %}
+      </select>
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <!-- <input type="submit" value="Confirm"/> -->
+    </form>
+  </div>
+{% endblock %}
   {% with item=item %}
   {% include "_item.html" %}
   {% endwith %}
 </div>
 
-<div class="item">
-  <div class="banner" id="vote-header">
-    <h1>Vote</h1>
-  </div>
 
+<div class="item">
   <div class="info">
     <form action="{{ url_for('begin') }}" method="post">
       <p class="center">Comparison voting begins after you see your first project. Please click <b>CONTINUE</b> after seeing this project or <b>SKIP</b> if you cannot find this project.</p>
-      <div id="vote-continue" class="radio-button button-full button-gap">
-        <input type="radio" name="action" id="vote-continue-radio" value="Continue">
-        <label for="vote-continue-radio">Continue</label>
+      <div class="radio-group">
+        <div id="vote-continue" class="radio-button button-full button-gap" style="display: flex; justify-content: start; gap: 8px; width: 100%; padding-left: 8px;">
+          <input type="radio" name="action" id="vote-continue-radio" value="Continue">
+          <label for="vote-continue-radio" class="radio-button-label" style="color: white; font-weight: 500; width: 100%;">Continue</label>
+        </div>
+  
+        <div id="vote-skip" class="radio-button button-full button-gap" style="display: flex; justify-content: start; gap: 8px; width: 100%; padding-left: 8px;">
+          <input type="radio" name="action" id="vote-skip-radio" value="Skip" checked>
+          <label for="vote-skip-radio" class="radio-button-label" style="color: white; font-weight: 500; width: 100%;">Skip</label>
+        </div>
       </div>
 
-      <div id="vote-skip" class="radio-button button-full button-gap">
-        <input type="radio" name="action" id="vote-skip-radio" value="Skip" checked>
-        <label for="vote-skip-radio">Skip</label>
-      </div>
-
-      <input type="submit" name="action" value="Submit" id="vote-submit" class="button-full button-gap">
+      <input type="submit" name="action" value="Submit" id="vote-submit" class="button-full button-gap" style="border: none; border-radius: 4px;">
 
       <input type="hidden" name="item_id" value="{{ item.id }}">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

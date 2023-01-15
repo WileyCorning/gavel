@@ -30,9 +30,26 @@
         {% endfor %}
       </select>
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-      <input type="submit" value="Submit"/>
+      <input type="submit" value="Confirm"/>
     </form>
   </div>
+  {% endblock %}
+
+  {% block TEMP %}
+  <div>
+    Viewed:
+    <ul>
+      {% for p_viewed in viewed %}
+        <li>{{ p_viewed }}</li>
+      {% endfor %}
+    </ul>
+    Ignored:
+    <ul>
+      {% for p_ig in ignored %}
+        <li>{{ p_ig }}</li>
+      {% endfor %}
+    </ul>
+    </div>
   {% endblock %}
   </div>
 
