@@ -11,80 +11,10 @@
     <h2>Projects eligible for {{ tag }}</h2>
   </div>
   <div class="info">
-    <table id="items">
-      <thead>
-        <tr>
-          <th data-sort-method="number">Gavel Id</th>
-          <th>UUID</th>
-          <th data-sort-method="caseInsensitiveSort">Name</th>
-          <th data-sort-method="caseInsensitiveSort">Zone</th>
-          <th data-sort-method="caseInsensitiveSort">Location</th>
-          <th data-sort-method="caseInsensitiveSort">Tags</th>
-          <th data-sort-method="none">Link</th>
-          <th data-sort-method="caseInsensitiveSort">Description</th>
-          <th class="sort-default" data-sort-method="number" data-sort-order="desc">Mu</th>
-          <th data-sort-method="number">Sigma Squared</th>
-          <th data-sort-method="number">Votes</th>
-          <th data-sort-method="number">Seen</th>
-          <th data-sort-method="number" data-sort-order="desc">Skipped</th>
-          <th data-sort-method="caseInsensitiveSort" data-sort-order="desc">Prioritize</th>
-          <th data-sort-method="caseInsensitiveSort">Active</th>
-          <th class="no-sort">Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
-        <tr class="{{ 'disabled' if not item.active else 'prioritized' if item.prioritized else '' }}">
-          <td><a href="{{ url_for('item_detail', item_id=item.id) }}" class="colored">{{ item.id }}</a></td>
-          {% if item.uuid == None %}
-            <td>[<i> none </i>]</td> 
-          {% else %}
-            <td>{{ item.uuid }}</td>
-          {% endif %}
-          <td>{{ item.name }}</td>
-          <td>{{ item.zone }}</td>
-          <td>{{ item.location }}</td>
-          <td>
-            {% for t in item.tags %}
-                {% if t.value == tag %}
-                    <span style="font-style:italic">{{t.value}}</span><span style="display:inline-block;width:1em;"></span>
-                {% else %}
-                    <a href="{{ url_for('tag_filtered', tag=t.value) }}">{{t.value}}</a><span style="display:inline-block;width:1em;"></span>
-                {% endif %}
-            {% endfor %}
-          </td>
-          <td>{% if item.link|length > 0 %}<a href="{{ item.link if (item.link.startswith('http://') or item.link.startswith('https://')) else '//'+item.link }}">[link]</a>{% endif %}</td>
-          <td class="preserve-formatting">{% if item.description|length > 140 %}{{ item.description[:140] }}...{% else %}{{ item.description }}{% endif %}</td>
-          <td>{{ item.mu | round(4) }}</td>
-          <td>{{ item.sigma_sq | round(4) }}</td>
-          <td>{{ item_counts.get(item.id, 0) }}</td>
-          <td>{{ item.viewed | length }}</td>
-          <td>{{ skipped.get(item.id, 0) }}</td>
-          <td class="compact" data-sort="{{ item.prioritized }}">
-            <form action="{{ url_for('item') }}" method="post">
-              <input type="submit" name="action" value="{{ 'Prioritize' if not item.prioritized else 'Cancel' }}" class="{{ 'positive' if not item.prioritized else 'negative' }}">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            </form>
-          </td>
-          <td class="compact" data-sort="{{ item.active }}">
-            <form action="{{ url_for('item') }}" method="post">
-              <input type="submit" name="action" value="{{ 'Disable' if item.active else 'Enable' }}" class="{{ 'negative' if item.active else 'positive' }}">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            </form>
-          </td>
-          <td class="compact">
-            <form action="{{ url_for('item') }}" method="post">
-              <input type="submit" name="action" value="Delete" class="negative">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="info">
+      {% import '_grid.html' as grid %}
+      {{ grid.of_items(items,item_counts,skipped) }}
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -114,7 +114,7 @@ def item():
                 return utils.server_error("Projects can't be deleted once they have been voted on by a judge. You can use the 'disable' functionality instead, which has a similar effect, preventing the project from being shown to judges.")
             else:
                 return utils.server_error(str(e))
-    return redirect(url_for('admin'))
+    return redirect(request.referrer)
 
 
 def allowed_file(filename):
