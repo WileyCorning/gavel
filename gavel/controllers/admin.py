@@ -236,10 +236,17 @@ def setting():
 @utils.requires_auth
 def tag_filtered(tag):
     tag_obj = Tag.by_value(tag)
+    invert = 'invert' in request.args
+    print(invert)
     if(tag_obj is None):
-        return render_template('admin_tag.html',tag=tag,items=[],item_counts={},skipped={})
+        return render_template('admin_tag.html' if not invert else 'admin_untag.html',tag=tag,items=[],item_counts={},skipped={})
     else:
-        items = tag_obj.items
+        items = []
+        if invert:
+            items = Item.query.filter(~Item.tags.any(id=tag_obj.id))
+        else:
+            items= tag_obj.items
+        
         decisions = Decision.query.all()
         item_counts = {}
         for d in decisions:
@@ -257,7 +264,7 @@ def tag_filtered(tag):
                 if i.id in viewed and a.id not in viewed[i.id]:
                     skipped[i.id] = skipped.get(i.id, 0) + 1
         
-        return render_template('admin_tag.html',tag=tag,items=items,
+        return render_template('admin_tag.html' if not invert else 'admin_untag.html',tag=tag,items=items,
         item_counts=item_counts,skipped=skipped)
 
 @app.route('/admin/item/<item_id>/')
