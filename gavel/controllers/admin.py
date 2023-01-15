@@ -87,6 +87,13 @@ def item():
             Item.by_id(item_id).prioritized = target_state
             db.session.commit()
         with_retries(tx)
+    elif action == 'MakeFinalist' or action == 'MakeNonFinalist':
+        item_id = request.form['item_id']
+        target_state = action == 'MakeFinalist'
+        def tx():
+            Item.by_id(item_id).finalist = target_state
+            db.session.commit()
+        with_retries(tx)
     elif action == 'Disable' or action == 'Enable':
         item_id = request.form['item_id']
         target_state = action == 'Enable'

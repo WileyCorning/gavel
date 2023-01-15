@@ -3,7 +3,7 @@ import gavel.utils as utils
 import gavel.crowd_bt as crowd_bt
 from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime
-
+from gavel.models.item import view_table
 ignore_table = db.Table('ignore',
     db.Column('annotator_id', db.Integer, db.ForeignKey('annotator.id')),
     db.Column('item_id', db.Integer, db.ForeignKey('item.id'))
@@ -24,7 +24,7 @@ class Annotator(db.Model):
     prev_id = db.Column(db.Integer, db.ForeignKey('item.id'))
     prev = db.relationship('Item', foreign_keys=[prev_id], uselist=False)
     ignore = db.relationship('Item', secondary=ignore_table)
-
+    viewed = db.relationship('Item', secondary=view_table, back_populates='viewed')
     alpha = db.Column(db.Float)
     beta = db.Column(db.Float)
 

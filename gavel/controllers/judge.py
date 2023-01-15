@@ -62,10 +62,11 @@ def index():
             return redirect(url_for('welcome'))
         maybe_init_annotator()
         zone_options = get_distinct_zones()
-        print(zone_options)
         if annotator.next is None:  
             return render_template(
                 'wait.html',
+                ignored=[ig.name for ig in annotator.ignore],
+                viewed=[v.name for v in annotator.viewed],
                 content=utils.render_markdown(settings.WAIT_MESSAGE),
                 zone=annotator.zone, zone_options=zone_options
             )
@@ -85,8 +86,10 @@ def set_zone():
         annotator = get_current_annotator()
         annotator.zone = request.form['next-zone']
         print(annotator.zone)
+    
         if(annotator.next is None or annotator.next.zone != annotator.zone):
             annotator.update_next(choose_next(annotator))
+        
         db.session.commit()
     with_retries(tx)
     return redirect(url_for('index'))
@@ -112,7 +115,8 @@ def vote():
                     db.session.add(decision)
                 annotator.next.viewed.append(annotator) # counted as viewed even if deactivated
                 annotator.prev = annotator.next
-                annotator.ignore.append(annotator.prev)
+                # [Wiley] do not add previously-seen items to the ignorelist
+                # annotator.ignore.append(annotator.prev)
             annotator.update_next(choose_next(annotator))
             db.session.commit()
     with_retries(tx)
@@ -155,9 +159,11 @@ def login(secret):
 @requires_open(redirect_to='index')
 @requires_active_annotator(redirect_to='index')
 def welcome():
+    zone_options = get_distinct_zones()
     return render_template(
         'welcome.html',
-        content=utils.render_markdown(settings.WELCOME_MESSAGE)
+        content=utils.render_markdown(settings.WELCOME_MESSAGE),
+        zone='',zone_options=zone_options
     )
 
 @app.route('/welcome/done', methods=['POST'])
@@ -168,6 +174,11 @@ def welcome_done():
         annotator = get_current_annotator()
         if request.form['action'] == 'Continue':
             annotator.read_welcome = True
+        if 'next-zone' in request.form:
+            print("!!!!!")
+            print(request.form['next-zone'])
+            annotator.zone = request.form['next-zone']
+
         db.session.commit()
     with_retries(tx)
     return redirect(url_for('index'))

@@ -48,6 +48,7 @@
           <th data-sort-method="caseInsensitiveSort">Description</th>
           <th class="sort-default" data-sort-method="number" data-sort-order="desc">Mu</th>
           <th data-sort-method="number">Sigma Squared</th>
+          <th data-sort-method="caseInsensitiveSort" data-sort-order="desc">Finalist?</th>
           <th data-sort-method="number">Votes</th>
           <th data-sort-method="number">Seen</th>
           <th data-sort-method="number" data-sort-order="desc">Skipped</th>
@@ -81,6 +82,13 @@
           <td class="preserve-formatting">{% if item.description|length > 140 %}{{ item.description[:140] }}...{% else %}{{ item.description }}{% endif %}</td>
           <td>{{ item.mu | round(4) }}</td>
           <td>{{ item.sigma_sq | round(4) }}</td>
+          <td class="compact" data-sort="{{ item.finalist }}">
+            <form action="{{ url_for('item') }}" method="post">
+              <button type="submit" name="action" value="{{ 'MakeFinalist' if not item.finalist else 'MakeNonFinalist' }}" class="{{ '' if not item.finalist else 'negative' }}">{{ '-' if not item.finalist else 'YES' }}</button>
+              <input type="hidden" name="item_id" value="{{ item.id }}">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            </form>
+          </td>
           <td>{{ item_counts.get(item.id, 0) }}</td>
           <td>{{ item.viewed | length }}</td>
           <td>{{ skipped.get(item.id, 0) }}</td>
