@@ -58,10 +58,63 @@ pip install -r requirements.txt
 
 #### In Production
 
-TODO
+The following example is for illustrative purposes only. It assumes a clone in the `/root` directory of a deployed service.
 
-For sending emails, you'll also need to start a celery worker with `celery -A
-gavel:celery worker`.
+1. Create a `systemd` service for the Gavel app at `/etc/systemd/system/gavel.service`:
+
+```ini
+[Unit]
+Description=Gavel daemon for Flask app
+Before=nginx.service
+After=network.target
+
+[Service]
+WorkingDirectory=/root/gavel
+ExecStart=gunicorn -b :8000 gavel:app
+Restart=always
+SyslogIdentifier=gavel
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+```
+
+2. Similarly to above, a service should be created for `celery` to be able to run async tasks relating to sending emails at `/etc/systemd/system/celery.service`:
+
+```ini
+[Unit]
+Description=Celery daemon for Gavel
+Before=nginx.service
+After=network.target
+
+[Service]
+WorkingDirectory=/root/gavel
+ExecStart=celery -A gavel:celery worker
+Restart=always
+SyslogIdentifier=celery
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+
+```
+
+3. The above example would then be started by running the following:
+
+  - Only once, ever:
+```shell
+systemctl enable gavel
+systemctl enable celery
+# This will automatically start the services on system boot, but does not start it immedately, so the next command must be run:
+```
+  - When the service should be started, if not already started:
+```shell
+systemctl start gavel
+systemctl start celery
+# or stop or restart
+```
 
 ## Usage
 
