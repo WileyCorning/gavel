@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright (c) Anish Athalye (me@anishathalye.com)
 #
 # This software is released under AGPLv3. See the included LICENSE.txt for
