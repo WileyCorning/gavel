@@ -11,6 +11,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  background-color: #FAFAFE;
 }
 
 html {
@@ -22,7 +23,6 @@ html {
 
 body {
   color: $text-color;
-  background-color: $light;
 }
 
 div {
@@ -42,6 +42,10 @@ h6 {
   padding-bottom: 0.5rem;
   font-family: $heading-font;
   font-weight: bold;
+}
+
+h1 {
+  font-size: 18px;
 }
 
 p {
@@ -156,7 +160,10 @@ hr {
 }
 
 .item {
-  padding-bottom: 1rem;
+  margin: 0 16px 16px;
+  border: 1px solid $light-grey;
+  border-radius: 8px;
+  background-color: white;
 }
 
 .info {
@@ -184,14 +191,15 @@ hr {
 .banner {
   text-align: center;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  // margin-bottom: 0.5rem;
   color: $light;
   background-color: $dark;
 }
 
 .banner-tight {
   @extend .banner;
-  margin-bottom: 0;
+  background-color: #473C85;
+  border-radius: 8px 8px 0 0;
 }
 
 #admin-header {
@@ -208,30 +216,34 @@ hr {
 }
 
 #previous-header {
-  background-color: $previous-color;
+  background-color: #EA9C48;
+  border-radius: 8px 8px 0 0;
 }
 
 #previous-body {
-  background-color: mix($previous-color, white, 25%);
+  background-color: #FBE1D2;
 }
 
 #current-header {
-  background-color: $current-color;
+  background-color: #5BB6CC;
+  border-radius: 8px 8px 0 0;
 }
 
 #current-body {
-  background-color: mix($current-color, white, 25%);
+  background-color: #C4E0E9;
 }
 
 #vote-header {
-  background-color: $vote-color;
+  background-color: #473C85;
+  border-radius: 8px 8px 0 0;
 }
 
 input[type=submit] {
   color: $light;
   background-color: $dark;
-  border: 2px solid $dark;
-  font-size: 1.2rem;
+  border: 1px solid white;
+  border-radius: 4px;
+  font-size: 1rem;
   text-transform: uppercase;
   text-align: center;
   height: 3rem;
@@ -255,6 +267,11 @@ input[type=submit] {
 
 .button-full {
   width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .button-gap {
@@ -262,27 +279,34 @@ input[type=submit] {
 }
 
 #vote-previous {
-  background-color: $previous-color;
-  border: 3px solid $previous-color;
+  background-color: #EA9C48;
+  padding: 8px 4px;
+  border-radius: 4px;
 }
 
 #vote-current {
-  background-color: $current-color;
-  border: 3px solid $current-color;
+  background-color: #5BB6CC;
+  padding: 8px 4px;
+  border-radius: 4px;
 }
 
 #vote-continue {
-  background-color: $current-color;
-  border: 3px solid $current-color;
+  background-color:#3C65B8;
+  padding: 8px 4px;
+  border-radius: 4px;
 }
 
 #vote-skip {
-  background-color: $vote-skip-color;
-  border: 3px solid $vote-skip-color;
+  background-color:#CC457B;
+  padding: 8px 4px;
+  border-radius: 4px;
+  max-width: 152px;
+  margin-bottom: 24px;
 }
 
 #vote-submit {
-  background-color: $vote-submit-color;
+  background-color: #473C85;
+  border-radius: 8px;
 }
 
 #vote-submit:disabled {
@@ -294,25 +318,7 @@ input[type=submit] {
   display: inline-block;
 }
 
-.radio-button > input {
-  opacity: 0;
-  position: fixed;
-  width: 0;
-}
-
-.radio-button > label {
-  display: inline-block;
-  padding: 10px 20px;
-  width: 100%;
-  color: $light;
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  text-align: center;
-}
-
 .radio-button > input:not(:checked) + label {
-  background-color: white;
   color: $dark;
 }
 
@@ -349,8 +355,49 @@ input[type=submit].neutral {
 #footer {
   margin-top: 2rem;
   border-top: 1px solid $light-grey;
+  background-color: #FAFAFE;
   p {
     font-size: 0.75rem;
     text-align: center;
   }
+}
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+
+.project_form {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: initial;
+  justify-content: center;
+  align-items: baseline;
+  gap: 24px;
+  border-bottom: 1px solid $light-grey;
+}
+
+.radio-group {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.radio-button-label {
+  box-sizing: border-box;
+  display: inline-block;
+  white-space: nowrap;
+  color: white;
+}
+
+#content {
+  background-color: #FAFAFE;
+  margin-top: 16px;
+}
+
+input[type="radio"]:checked + .radio-button {
+  border: 3px solid red;
 }

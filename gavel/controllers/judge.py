@@ -4,6 +4,7 @@ from gavel.constants import *
 import gavel.settings as settings
 import gavel.utils as utils
 import gavel.crowd_bt as crowd_bt
+from sqlalchemy import and_,or_,not_
 from flask import (
     redirect,
     render_template,
@@ -61,15 +62,46 @@ def index():
         if not annotator.read_welcome:
             return redirect(url_for('welcome'))
         maybe_init_annotator()
-        if annotator.next is None:
+        zone_options = get_distinct_zones()
+        if annotator.next is None:  
             return render_template(
                 'wait.html',
-                content=utils.render_markdown(settings.WAIT_MESSAGE)
+                ignored=[ig.name for ig in annotator.ignore],
+                viewed=[v.name for v in annotator.viewed],
+                content=utils.render_markdown(settings.WAIT_MESSAGE),
+                zone=annotator.zone, zone_options=zone_options
             )
         elif annotator.prev is None:
-            return render_template('begin.html', item=annotator.next)
+            return render_template('begin.html', item=annotator.next, zone=annotator.zone, zone_options=zone_options)
         else:
-            return render_template('vote.html', prev=annotator.prev, next=annotator.next)
+            prev_viewed = annotator in annotator.prev.viewed
+            next_viewed = annotator in annotator.next.viewed
+            print(prev_viewed)
+            print(next_viewed)
+            return render_template('vote.html', prev=annotator.prev,prev_viewed=prev_viewed,next=annotator.next,next_viewed=next_viewed, zone=annotator.zone, zone_options=zone_options)
+
+def get_distinct_zones():
+    return [z[0] for z in Item.query.with_entities(Item.zone).distinct()]
+
+@app.route('/set_zone',methods=['POST'])
+@requires_open(redirect_to='index')
+@requires_active_annotator(redirect_to='index')
+def set_zone():
+    def tx():
+        annotator = get_current_annotator()
+        annotator.zone = request.form['next-zone']
+        print(annotator.zone)
+    
+        if(annotator.next is None or (
+            # Shuffle next if (a) it's fresh and we're moving to a different zone, or (b) it's reheated and we're reentering its zone
+            (annotator in annotator.next.viewed and annotator.next.zone == annotator.zone) or
+            (annotator not in annotator.next.viewed and annotator.next.zone != annotator.zone)
+        )):
+            annotator.update_next(choose_next(annotator))
+        
+        db.session.commit()
+    with_retries(tx)
+    return redirect(url_for('index'))
 
 @app.route('/vote', methods=['POST'])
 @requires_open(redirect_to='index')
@@ -90,9 +122,25 @@ def vote():
                         perform_vote(annotator, next_won=True)
                         decision = Decision(annotator, winner=annotator.next, loser=annotator.prev)
                     db.session.add(decision)
-                annotator.next.viewed.append(annotator) # counted as viewed even if deactivated
-                annotator.prev = annotator.next
-                annotator.ignore.append(annotator.prev)
+                '''
+                [Wiley] Adjustment note
+
+                The original Gavel logic ignores an item as soon as it is voted.
+
+                Here, we change this so that the item will only be ignored if this is its *second* vote.
+
+                The effect is that an item can reappear once the annotator is in a different zone.
+                See changes made to the selection logic.
+                '''
+                # Check if this `next` is resurfacing
+                was_previously_viewed = annotator in annotator.next.viewed
+                
+                if was_previously_viewed:
+                    annotator.ignore.append(annotator.next)
+                else:
+                    annotator.next.viewed.append(annotator) # counted as viewed even if deactivated
+                    annotator.prev = annotator.next
+            
             annotator.update_next(choose_next(annotator))
             db.session.commit()
     with_retries(tx)
@@ -135,9 +183,11 @@ def login(secret):
 @requires_open(redirect_to='index')
 @requires_active_annotator(redirect_to='index')
 def welcome():
+    zone_options = get_distinct_zones()
     return render_template(
         'welcome.html',
-        content=utils.render_markdown(settings.WELCOME_MESSAGE)
+        content=utils.render_markdown(settings.WELCOME_MESSAGE),
+        zone='',zone_options=zone_options
     )
 
 @app.route('/welcome/done', methods=['POST'])
@@ -148,6 +198,9 @@ def welcome_done():
         annotator = get_current_annotator()
         if request.form['action'] == 'Continue':
             annotator.read_welcome = True
+        if 'next-zone' in request.form:
+            annotator.zone = request.form['next-zone']
+
         db.session.commit()
     with_retries(tx)
     return redirect(url_for('index'))
@@ -165,12 +218,26 @@ def preferred_items(annotator):
     items = []
     ignored_ids = {i.id for i in annotator.ignore}
 
-    if ignored_ids:
-        available_items = Item.query.filter(
-            (Item.active == True) & (~Item.id.in_(ignored_ids))
-        ).all()
+    '''
+    Allow an item if it has not been ignored, and EITHER:
+    - it is in the same zone and has not been viewed, OR
+    - it is in a different zone from the annotator AND has been viewed
+    '''
+
+    if annotator.zone == "":
+        available_items = Item.query.filter(and_(
+            (Item.active == True),
+            not_(Item.id.in_(ignored_ids)),
+            not_(Item.viewed.any(Annotator.id == annotator.id))
+        )).all()
     else:
-        available_items = Item.query.filter(Item.active == True).all()
+        available_items = Item.query.filter(and_(
+            (Item.active == True),
+            not_(Item.id.in_(ignored_ids)),
+            or_(
+                and_(Item.zone != annotator.zone, Item.viewed.any(Annotator.id == annotator.id)),
+                and_(Item.zone == annotator.zone, not_(Item.viewed.any(Annotator.id == annotator.id)))
+        ))).all()
 
     prioritized_items = [i for i in available_items if i.prioritized]
 

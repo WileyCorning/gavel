@@ -9,6 +9,20 @@
 
 <div class="item">
   <div class="banner">
+    <h2>API</h2>
+  </div>
+  <div class="info">
+    <ul>
+      <li><a href="{{ url_for('item_dump') }}">Projects</a></li>
+      <li><a href="{{ url_for('annotator_dump') }}">Judges</a></li>
+      <li><a href="{{ url_for('decisions_dump') }}">Decisions</a></li>
+
+    </ul>
+  </div>
+</div>
+
+<div class="item">
+  <div class="banner">
     <h2>Stats</h2>
   </div>
   <div class="info">
@@ -21,60 +35,8 @@
     <h2>Projects</h2>
   </div>
   <div class="info">
-    <table id="items">
-      <thead>
-        <tr>
-          <th data-sort-method="number">Id</th>
-          <th data-sort-method="caseInsensitiveSort">Name</th>
-          <th data-sort-method="caseInsensitiveSort">Location</th>
-          <th data-sort-method="caseInsensitiveSort">Description</th>
-          <th class="sort-default" data-sort-method="number" data-sort-order="desc">Mu</th>
-          <th data-sort-method="number">Sigma Squared</th>
-          <th data-sort-method="number">Votes</th>
-          <th data-sort-method="number">Seen</th>
-          <th data-sort-method="number" data-sort-order="desc">Skipped</th>
-          <th data-sort-method="caseInsensitiveSort" data-sort-order="desc">Prioritize</th>
-          <th data-sort-method="caseInsensitiveSort">Active</th>
-          <th class="no-sort">Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
-        <tr class="{{ 'disabled' if not item.active else 'prioritized' if item.prioritized else '' }}">
-          <td><a href="{{ url_for('item_detail', item_id=item.id) }}" class="colored">{{ item.id }}</a></td>
-          <td>{{ item.name }}</td>
-          <td>{{ item.location }}</td>
-          <td class="preserve-formatting">{{ item.description }}</td>
-          <td>{{ item.mu | round(4) }}</td>
-          <td>{{ item.sigma_sq | round(4) }}</td>
-          <td>{{ item_counts.get(item.id, 0) }}</td>
-          <td>{{ item.viewed | length }}</td>
-          <td>{{ skipped.get(item.id, 0) }}</td>
-          <td class="compact" data-sort="{{ item.prioritized }}">
-            <form action="{{ url_for('item') }}" method="post">
-              <input type="submit" name="action" value="{{ 'Prioritize' if not item.prioritized else 'Cancel' }}" class="{{ 'positive' if not item.prioritized else 'negative' }}">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            </form>
-          </td>
-          <td class="compact" data-sort="{{ item.active }}">
-            <form action="{{ url_for('item') }}" method="post">
-              <input type="submit" name="action" value="{{ 'Disable' if item.active else 'Enable' }}" class="{{ 'negative' if item.active else 'positive' }}">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            </form>
-          </td>
-          <td class="compact">
-            <form action="{{ url_for('item') }}" method="post">
-              <input type="submit" name="action" value="Delete" class="negative">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% import '_grid.html' as grid %}
+    {{ grid.of_items(items,item_counts,skipped) }}
   </div>
   <div class="api-link">
     <a href="{{ url_for('item_dump') }}">Download CSV</a>
@@ -93,10 +55,12 @@
           <th data-sort-method="caseInsensitiveSort">Name</th>
           <th data-sort-method="caseInsensitiveSort">Email</th>
           <th data-sort-method="caseInsensitiveSort">Description</th>
+          <th data-sort-method="caseInsensitiveSort">Zone</th>
           <th data-sort-method="number">Votes</th>
           <th data-sort-method="number">Next (Id)</th>
           <th data-sort-method="number">Previous (Id)</th>
           <th data-sort-method="number" data-sort-order="desc">Updated</th>
+          <th class="no-sort">AUTH</th>
           <th class="no-sort">Email</th>
           <th data-sort-method="caseInsensitiveSort">Active</th>
           <th class="no-sort">Delete</th>
@@ -109,10 +73,12 @@
           <td>{{ annotator.name }}</td>
           <td>{{ annotator.email }}</td>
           <td>{{ annotator.description }}</td>
+          <td>{{ annotator.zone }}</td>
           <td>{{ counts.get(annotator.id, 0) }}</td>
           <td data-sort="{{ annotator.next_id or -1 }}">{{ annotator.next_id }}</td>
           <td data-sort="{{ annotator.prev_id or -1 }}">{{ annotator.prev_id }}</td>
           <td data-sort="{{ annotator.updated | utcdatetime_epoch }}">{{ annotator.updated | utcdatetime_local }}</td>
+          <td>{{ url_for('login',secret=annotator.secret, _external=True) }}</td>
           <td class="compact">
             <form action="{{ url_for('annotator') }}" method="post">
               <input type="submit" name="action" value="Email" class="neutral">
@@ -149,7 +115,7 @@
     <h2>Add Projects</h2>
   </div>
   <div class="info">
-    <p>Add name, location, description (CSV format)</p>
+    <p>Add UUID (optional), name, zone, location, tags (space-delimited), link, description. (CSV format)</p>
     <textarea name="data" form="item_form"></textarea>
     <form action="{{ url_for('item') }}" method="post" id="item_form" enctype="multipart/form-data">
       <div class="upload-container">

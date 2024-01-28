@@ -3,7 +3,7 @@ import gavel.utils as utils
 import gavel.crowd_bt as crowd_bt
 from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime
-
+from gavel.models.item import view_table
 ignore_table = db.Table('ignore',
     db.Column('annotator_id', db.Integer, db.ForeignKey('annotator.id')),
     db.Column('item_id', db.Integer, db.ForeignKey('item.id'))
@@ -14,6 +14,7 @@ class Annotator(db.Model):
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
+    zone = db.Column(db.Text, nullable=False)
     read_welcome = db.Column(db.Boolean, default=False, nullable=False)
     description = db.Column(db.Text, nullable=False)
     secret = db.Column(db.String(32), unique=True, nullable=False)
@@ -23,7 +24,7 @@ class Annotator(db.Model):
     prev_id = db.Column(db.Integer, db.ForeignKey('item.id'))
     prev = db.relationship('Item', foreign_keys=[prev_id], uselist=False)
     ignore = db.relationship('Item', secondary=ignore_table)
-
+    viewed = db.relationship('Item', secondary=view_table, back_populates='viewed')
     alpha = db.Column(db.Float)
     beta = db.Column(db.Float)
 
@@ -31,6 +32,7 @@ class Annotator(db.Model):
         self.name = name
         self.email = email
         self.description = description
+        self.zone = ""
         self.alpha = crowd_bt.ALPHA_PRIOR
         self.beta = crowd_bt.BETA_PRIOR
         self.secret = utils.gen_secret(32)

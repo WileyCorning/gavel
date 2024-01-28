@@ -8,5 +8,36 @@
   <div class="info">
     {{ content }}
   </div>
+  {% if zone_options %}
+  {% block zoneswap %}
+  <div>
+    <form action="{{ url_for('set_zone') }}" method="post" class="project_form">
+      <p>More projects may be available in another location.</p>
+      <select type="dropdown" onchange="this.form.submit()" name="next-zone" id="select-next-zone"
+        style="height: 40px; width: 160px;" required>
+        {% if not zone %}
+        <option value="" selected></option>>
+        {% endif %}
+        {% for zone_opt in zone_options %}
+        {% if zone_opt == zone %}
+        <option value="{{ zone_opt }}" selected>{{ zone_opt }}</option>
+        {% else %}
+        <option value="{{ zone_opt }}">{{ zone_opt }}</option>
+        {% endif %}
+        {% endfor %}
+        <!--
+      {% if zone %}
+        <option value=""><span style="font-style: italic">(all buildings)</span></option>>
+      {% else %}
+        <option value=""><span style="font-style: italic" selected>(all buildings)</span></option>>
+      {% endif %}
+      -->
+      </select>
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <!-- <input type="submit" value="Confirm"/> -->
+    </form>
+  </div>
+  {% endblock %}
+  {% endif %}
 </div>
 {% endblock %}

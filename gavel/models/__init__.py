@@ -13,6 +13,7 @@ db = SerializableAlchemy()
 
 from gavel.models.annotator import Annotator, ignore_table
 from gavel.models.item import Item, view_table
+from gavel.models.tag import Tag, item_tag_table
 from gavel.models.decision import Decision
 from gavel.models.setting import Setting
 

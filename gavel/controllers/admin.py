@@ -53,17 +53,30 @@ def admin():
 @app.route('/admin/item', methods=['POST'])
 @utils.requires_auth
 def item():
+    N_COL = len(['uuid','name','zone','location','tags','link','description'])
     action = request.form['action']
     if action == 'Submit':
         data = parse_upload_form()
         if data:
+            tag_vals = set()
             # validate data
             for index, row in enumerate(data):
-                if len(row) != 3:
-                    return utils.user_error('Bad data: row %d has %d elements (expecting 3)' % (index + 1, len(row)))
+                if len(row) != N_COL:
+                    return utils.user_error('Bad data: row %d has %d elements (expecting %d)' % (index + 1, len(row), N_COL))
+            # harvest tags
+            for index,row in enumerate(data):
+                for v in row[4].split(' '):
+                    tag_vals.add(v)
+            
+            tag_dict = get_or_insert_tag_values(tag_vals)
+
             def tx():
                 for row in data:
+                    row_tags = []
+                    for v in row[4].split(' '):
+                        row_tags.append(tag_dict[v])
                     _item = Item(*row)
+                    _item.tags = row_tags
                     db.session.add(_item)
                 db.session.commit()
             with_retries(tx)
@@ -72,6 +85,13 @@ def item():
         target_state = action == 'Prioritize'
         def tx():
             Item.by_id(item_id).prioritized = target_state
+            db.session.commit()
+        with_retries(tx)
+    elif action == 'MakeFinalist' or action == 'MakeNonFinalist':
+        item_id = request.form['item_id']
+        target_state = action == 'MakeFinalist'
+        def tx():
+            Item.by_id(item_id).finalist = target_state
             db.session.commit()
         with_retries(tx)
     elif action == 'Disable' or action == 'Enable':
@@ -94,7 +114,7 @@ def item():
                 return utils.server_error("Projects can't be deleted once they have been voted on by a judge. You can use the 'disable' functionality instead, which has a similar effect, preventing the project from being shown to judges.")
             else:
                 return utils.server_error(str(e))
-    return redirect(url_for('admin'))
+    return redirect(request.referrer)
 
 
 def allowed_file(filename):
@@ -118,6 +138,20 @@ def parse_upload_form():
         data = utils.data_from_csv_string(csv)
     return data
 
+def get_or_insert_tag_values(tag_vals):
+    tags = Tag.query.filter(Tag.value.in_(tag_vals)).all()
+    existing_v = [t.value for t in tags]
+    to_add = [t for t in tag_vals if t not in existing_v]
+
+    def tx():
+        for v in to_add:
+            _tag = Tag(v)
+            db.session.add(_tag)
+            tags.append(_tag)
+        db.session.commit()
+    with_retries(tx)
+    
+    return {t.value: t for t in tags}
 
 @app.route('/admin/item_patch', methods=['POST'])
 @utils.requires_auth
@@ -197,6 +231,41 @@ def setting():
         Setting.set(SETTING_CLOSED, new_value)
         db.session.commit()
     return redirect(url_for('admin'))
+
+@app.route('/admin/tag/<tag>/')
+@utils.requires_auth
+def tag_filtered(tag):
+    tag_obj = Tag.by_value(tag)
+    invert = 'invert' in request.args
+    print(invert)
+    if(tag_obj is None):
+        return render_template('admin_tag.html' if not invert else 'admin_untag.html',tag=tag,items=[],item_counts={},skipped={})
+    else:
+        items = []
+        if invert:
+            items = Item.query.filter(~Item.tags.any(id=tag_obj.id))
+        else:
+            items= tag_obj.items
+        
+        decisions = Decision.query.all()
+        item_counts = {}
+        for d in decisions:
+            a = d.annotator_id
+            w = d.winner_id
+            l = d.loser_id
+            item_counts[w] = item_counts.get(w, 0) + 1
+            item_counts[l] = item_counts.get(l, 0) + 1
+
+        viewed = {i.id: {a.id for a in i.viewed} for i in items}
+        annotators = Annotator.query.order_by(Annotator.id).all()
+        skipped = {}
+        for a in annotators:
+            for i in a.ignore:
+                if i.id in viewed and a.id not in viewed[i.id]:
+                    skipped[i.id] = skipped.get(i.id, 0) + 1
+        
+        return render_template('admin_tag.html' if not invert else 'admin_untag.html',tag=tag,items=items,
+        item_counts=item_counts,skipped=skipped)
 
 @app.route('/admin/item/<item_id>/')
 @utils.requires_auth

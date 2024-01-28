@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<div class="item">
+  <div class="banner" id="admin-header">
+    <a href="{{ url_for('admin') }}"><h1>Tags</h1></a>
+  </div>
+</div>
+<div class="item">
+  <div class="banner">
+    <h2>Projects eligible for {{ tag }}</h2>
+  </div>
+  <div class="info">
+      <a href="{{ url_for('tag_filtered', tag=tag, invert=1) }}">see ineligible for {{tag}}</a>
+  </div>
+  <div class="info">
+    <div class="info">
+      {% import '_grid.html' as grid %}
+      {{ grid.of_items(items,item_counts,skipped) }}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block end %}
+<script src="{{ url_for('static', filename='js/vendor/tablesort.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/tablesort.number.js') }}"></script>
+<script>
+var tables = [
+  document.getElementById('items'),
+  document.getElementById('annotators'),
+];
+for (var i = 0; i < tables.length; i++) {
+  new Tablesort(tables[i]);
+}
+</script>
+{% endblock %}
