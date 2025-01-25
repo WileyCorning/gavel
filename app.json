@@ -3,6 +3,11 @@
         "heroku-postgresql:standard-0",
         "heroku-redis:premium-3"
     ],
+    "buildpacks": [
+        {
+            "url": "https://github.com/heroku/heroku-buildpack-python#v267"
+        }
+    ],
     "formation": {
         "web": {
             "quantity": 1,
