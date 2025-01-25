@@ -1,7 +1,7 @@
 {
     "addons": [
-        "heroku-postgresql:hobby-dev",
-        "heroku-redis:hobby-dev"
+        "heroku-postgresql:standard-0",
+        "heroku-rediscloud:1000"
     ],
     "formation": {
         "web": {
